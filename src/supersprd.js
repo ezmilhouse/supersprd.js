@@ -423,11 +423,16 @@ var supersprd = function (exports) {
                     // skip!
                     if (this.resources) return callback(null, this.resources);
 
+
+
                     superflow
                         .seq('session', function (cb) {
 
                         // skip!
                         if (that.auth.session) return cb(null, that.auth.session);
+
+		                console.log('username', that.auth.username);
+		                console.log('setup', that.setup);
 
                         superagent
                             .post(that.endpoint + '/sessions?' + sortAndStringify(that.query).str)
@@ -614,30 +619,126 @@ var supersprd = function (exports) {
 
         this._sdk = _sdks[name].sdk;
 
-        this._sdk.init(function (err, resources) {
+	    if (callback) {
 
-            callback(err, {
+	        this._sdk.init(function (err, resources) {
 
-                api  : that._sdk.api,
-                get  : that._sdk.get,
-                post : that._sdk.post,
-                put  : that._sdk.put,
-                del  : that._sdk.del,
+	            callback(err, {
 
-                // ---
+	                api  : that._sdk.api,
+	                get  : that._sdk.get,
+	                post : that._sdk.post,
+	                put  : that._sdk.put,
+	                del  : that._sdk.del,
 
-                setup    : that._sdk.setup,
-                auth     : that._sdk.auth,
-                query    : that._sdk.query,
-                endpoint : that._sdk.endpoint
+	                // ---
 
-            }, resources);
+	                setup    : that._sdk.setup,
+	                auth     : that._sdk.auth,
+	                query    : that._sdk.query,
+	                endpoint : that._sdk.endpoint
 
-        });
+	            }, resources);
+
+	        });
+
+	    } else {
+
+		    return this;
+
+	    }
 
     }
 
-    Use.prototype.end = noop;
+    Use.prototype.end = function(callback) {
+
+	    var that = this;
+
+	    // ---
+
+	    that._sdk.endpoint = that._sdk.setup.proxy + '/' + that._sdk.setup.platform + '/api/v1';
+
+	    // ---
+
+	    that._sdk.query = {
+
+		    apiKey    : that._sdk.access.key,
+		    locale    : that._sdk.setup.locale,
+		    mediaType : that._sdk.setup.type
+
+	    };
+
+	    // ---
+
+	    this._sdk.init(function (err, resources) {
+
+		    callback(err, {
+
+			    api  : that._sdk.api,
+			    get  : that._sdk.get,
+			    post : that._sdk.post,
+			    put  : that._sdk.put,
+			    del  : that._sdk.del,
+
+			    // ---
+
+			    setup    : that._sdk.setup,
+			    auth     : that._sdk.auth,
+			    query    : that._sdk.query,
+			    endpoint : that._sdk.endpoint
+
+		    }, resources);
+
+	    });
+
+    };
+
+	// ---
+
+	Use.prototype.is = function(mixed, value) {
+
+		var that = this;
+
+		// ---
+
+		var sdk = that._sdk;
+
+		// ---
+
+		if (isArray(mixed)) {
+			_.each(mixed, function(value) {
+				that.is(value);
+			});
+			return that;
+		}
+
+		if (isObject(mixed)) {
+			_.each(mixed, function(value, key) {
+				that.is(key, value);
+			});
+			return that;
+		}
+
+		console.log('m', mixed);
+		that._sdk.setup[mixed] = value || null;
+
+		// ---
+
+		return that;
+
+	};
+	Use.prototype.of = function(id, username, password) {
+
+		console.log('u', username);
+		console.log('p', password);
+
+		this._sdk.auth.id = id || null;
+		this._sdk.auth.username = username || null;
+		this._sdk.auth.password = password || null;
+
+		return this;
+
+	};
 
 
     exports = {
