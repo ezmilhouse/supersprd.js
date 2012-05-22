@@ -408,12 +408,12 @@ var supersprd = function (exports) {
                 case 'shop' :
 
                     // skip!
-                    if (this.resources) return callback(null, this.resources);
+                    if (this._resources) return callback(null, this._resources);
 
                     this.api('GET', '', function (err, res) {
                         if (err) return log('[error][GET] Not found.');
-                        that.resources = res;
-                        callback(null, that.resources);
+                        that._resources = res;
+                        callback(null, that._resources);
                     });
 
                     break;
@@ -421,18 +421,15 @@ var supersprd = function (exports) {
                 case 'user' :
 
                     // skip!
-                    if (this.resources) return callback(null, this.resources);
+                    if (this._resources) return callback(null, this._resources);
 
-
+	               	// ---
 
                     superflow
                         .seq('session', function (cb) {
 
                         // skip!
                         if (that.auth.session) return cb(null, that.auth.session);
-
-		                console.log('username', that.auth.username);
-		                console.log('setup', that.setup);
 
                         superagent
                             .post(that.endpoint + '/sessions?' + sortAndStringify(that.query).str)
@@ -449,7 +446,7 @@ var supersprd = function (exports) {
                                 }
                             });
 
-                    })
+                        })
                         .seq('session', function (cb) {
 
                             superagent
@@ -469,23 +466,36 @@ var supersprd = function (exports) {
                             that.auth.id = this.vars.session.user.id;
 
                             that.api('GET', '', function (err, res) {
-                                if (err) return log('[error][GET] Not found.');
-                                cb(null, res);
+	                            if (err) return log('[error][GET] Not found.');
+	                            that._resources = res;
+	                            cb(null, that._resources);
                             });
+
+
+
 
                         })
                         .end(function () {
 
+		                    delete that.auth.username;
+		                    delete that.auth.password;
+
+		                    // ---
+
                             that.auth.session = this.vars.session.id;
+
+		                    // ---
 
                             callback(null, that.auth);
 
                         });
 
                     break;
+
                 default :
                     callback();
                     break;
+
             }
 
             return this;
@@ -621,6 +631,8 @@ var supersprd = function (exports) {
 
 	    if (callback) {
 
+		    // ---
+
 	        this._sdk.init(function (err, resources) {
 
 	            callback(err, {
@@ -644,7 +656,7 @@ var supersprd = function (exports) {
 
 	    } else {
 
-		    return this;
+	        return this;
 
 	    }
 
@@ -672,22 +684,26 @@ var supersprd = function (exports) {
 
 	    this._sdk.init(function (err, resources) {
 
-		    callback(err, {
+		    if (callback) {
 
-			    api  : that._sdk.api,
-			    get  : that._sdk.get,
-			    post : that._sdk.post,
-			    put  : that._sdk.put,
-			    del  : that._sdk.del,
+			    callback(err, {
 
-			    // ---
+				    api  : that._sdk.api,
+				    get  : that._sdk.get,
+				    post : that._sdk.post,
+				    put  : that._sdk.put,
+				    del  : that._sdk.del,
 
-			    setup    : that._sdk.setup,
-			    auth     : that._sdk.auth,
-			    query    : that._sdk.query,
-			    endpoint : that._sdk.endpoint
+				    // ---
 
-		    }, resources);
+				    setup    : that._sdk.setup,
+				    auth     : that._sdk.auth,
+				    query    : that._sdk.query,
+				    endpoint : that._sdk.endpoint
+
+			    }, resources);
+
+		    }
 
 	    });
 
@@ -719,7 +735,6 @@ var supersprd = function (exports) {
 			return that;
 		}
 
-		console.log('m', mixed);
 		that._sdk.setup[mixed] = value || null;
 
 		// ---
@@ -728,9 +743,6 @@ var supersprd = function (exports) {
 
 	};
 	Use.prototype.of = function(id, username, password) {
-
-		console.log('u', username);
-		console.log('p', password);
 
 		this._sdk.auth.id = id || null;
 		this._sdk.auth.username = username || null;
