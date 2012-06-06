@@ -438,11 +438,14 @@ var supersprd = function (exports) {
                                 password : that.auth.password
                             })
                             .end(function (res) {
-                                if (res.ok) {
+
+                                if (res.ok && res.body.response.location) {
                                     cb(null, res.body.response.location.split('sessions/')[1]);
                                 } else {
                                     log('[error][GET] Not found.');
-                                    callback(res.error, res.status);
+	                                res.status = '404'; // TODO: better place? better solution?
+                                    res.error = true;
+	                                callback(res.error, res.status);
                                 }
                             });
 
